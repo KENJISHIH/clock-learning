@@ -3,33 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小二數學：時間大師（完整版）</title>
+    <title>小二數學：時間大師（iPad 優化版）</title>
     <style>
         body {
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; /* 改為靠上對齊，因為內容變多了 */
+            justify-content: flex-start;
             min-height: 100vh;
             margin: 0;
             padding-top: 20px;
             padding-bottom: 40px;
             background-color: #fffbf0;
-            touch-action: pan-y; /* 允許垂直捲動 */
+            touch-action: pan-y;
         }
 
-        h1 { color: #d35400; margin: 0 0 15px 0; font-size: 1.4rem; }
+        h1 { color: #d35400; margin: 0 0 15px 0; font-size: 1.5rem; }
 
         /* 資訊面板區 */
-        .info-panel {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-
-        /* 顯示幾大格的盒子 */
         #diff-box {
             position: relative;
             background: #27ae60;
@@ -40,40 +32,45 @@
             font-size: 1.2rem;
             min-width: 180px;
             text-align: center;
-            display: none; /* 預設隱藏 */
+            display: none;
             cursor: pointer;
             box-shadow: 0 4px 0 #1e8449;
+            margin-bottom: 15px;
         }
 
+        /* 時鐘容器 - 預設手機大小 */
         #clock-container {
             position: relative;
             width: 340px;
             height: 340px;
             margin-bottom: 20px;
-            flex-shrink: 0; /* 防止時鐘被壓縮 */
+            flex-shrink: 0;
         }
 
         canvas {
             background: white;
             border-radius: 50%;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
             border: 8px solid #f39c12;
             cursor: pointer;
             touch-action: none;
+            width: 100%;  /* 跟隨容器大小 */
+            height: 100%;
         }
 
         /* 控制按鈕區 */
         .controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-bottom: 15px;
             flex-wrap: wrap;
             justify-content: center;
             width: 95%;
+            max-width: 800px;
         }
 
         button {
-            padding: 8px 12px;
+            padding: 10px 16px;
             font-size: 1rem;
             border: none;
             border-radius: 15px;
@@ -82,6 +79,7 @@
             box-shadow: 0 4px 0 #2980b9;
             cursor: pointer;
             font-weight: bold;
+            font-family: inherit;
         }
 
         button:active { transform: translateY(4px); box-shadow: none; }
@@ -99,8 +97,8 @@
         /* 數位時間顯示區 */
         #digital-box {
             position: relative;
-            width: 220px;
-            height: 60px;
+            width: 240px;
+            height: 70px;
             background: #2c3e50;
             border-radius: 15px;
             display: flex;
@@ -112,13 +110,12 @@
         }
 
         #digital-time {
-            font-size: 2.5rem;
+            font-size: 3rem;
             color: #ecf0f1;
             font-family: 'Courier New', monospace;
             font-weight: bold;
         }
 
-        /* 通用遮罩樣式 */
         .mask {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -128,14 +125,14 @@
             justify-content: center;
             align-items: center;
             color: #bdc3c7;
-            font-size: 1rem;
+            font-size: 1.1rem;
             display: none;
         }
         
         /* 出題區塊 */
         .teacher-panel {
             background: #fff;
-            padding: 15px;
+            padding: 15px 25px;
             border-radius: 20px;
             border: 2px dashed #bdc3c7;
             display: flex;
@@ -144,36 +141,71 @@
             margin-top: 10px;
         }
         
-        .teacher-panel span { font-weight: bold; color: #7f8c8d; }
+        .teacher-panel span { font-weight: bold; color: #7f8c8d; font-size: 1.2rem; }
         
         input[type="number"] {
-            width: 50px;
+            width: 60px;
             padding: 8px;
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             text-align: center;
             border: 2px solid #bdc3c7;
             border-radius: 10px;
         }
 
-        .helper-text { color: #7f8c8d; font-size: 0.9rem; margin-top: 5px; text-align: center; }
+        .helper-text { color: #7f8c8d; font-size: 1rem; margin-top: 15px; text-align: center; }
 
+        /* --- iPad / 平板 特別優化 --- */
+        /* 當螢幕寬度大於 768px 時 (iPad 直立或橫放通常都大於這個) */
+        @media (min-width: 768px) {
+            h1 { font-size: 2rem; margin-bottom: 25px; }
+            
+            /* 時鐘變大 */
+            #clock-container {
+                width: 600px;
+                height: 600px;
+            }
+            
+            /* 字體與按鈕變大 */
+            button {
+                padding: 15px 25px;
+                font-size: 1.3rem;
+                border-radius: 20px;
+            }
+            
+            #digital-box {
+                width: 300px;
+                height: 90px;
+            }
+            
+            #digital-time { font-size: 4rem; }
+            
+            #diff-box {
+                font-size: 1.5rem;
+                padding: 15px 30px;
+            }
+
+            .teacher-panel {
+                transform: scale(1.1); /* 整個出題區稍微放大 */
+                margin-top: 30px;
+            }
+        }
     </style>
 </head>
 <body>
 
     <h1>🕒 時間大師</h1>
 
-    <!-- 1. 新功能：經過時間顯示區 (綠色盒子) -->
+    <!-- 經過時間顯示區 -->
     <div id="diff-box" onclick="toggleDiffMask()">
         <span id="diff-text">0 分鐘</span>
         <div id="diff-mask" class="mask">點我看經過多久</div>
     </div>
     
     <div id="clock-container">
-        <canvas id="clock" width="340" height="340"></canvas>
+        <canvas id="clock"></canvas>
     </div>
 
-    <!-- 2. 答案顯示區 (藍色盒子) -->
+    <!-- 答案顯示區 -->
     <div id="digital-box" onclick="toggleTimeMask()">
         <span id="digital-time">12:00</span>
         <div id="time-mask" class="mask">點我看現在幾點</div>
@@ -192,7 +224,7 @@
         <button onclick="jumpHour(1)">+1時</button>
     </div>
 
-    <!-- 3. 新功能：出題區 -->
+    <!-- 出題區 -->
     <div class="teacher-panel">
         <span>出題：</span>
         <input type="number" id="input-h" min="1" max="12" value="9">
@@ -207,6 +239,7 @@
     <script>
         const canvas = document.getElementById('clock');
         const ctx = canvas.getContext('2d');
+        const container = document.getElementById('clock-container');
         const digitalDisplay = document.getElementById('digital-time');
         const diffBox = document.getElementById('diff-box');
         const diffText = document.getElementById('diff-text');
@@ -214,30 +247,51 @@
         const timeMask = document.getElementById('time-mask');
         const btnTrace = document.getElementById('btn-trace');
         
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = canvas.width / 2 - 35;
+        let centerX, centerY, radius;
+        let scale = 1; // 縮放比例
 
-        let minutes = 720; // 預設 12:00
+        let minutes = 720; 
         let isDragging = false;
-        let startMinutes = -1; // -1 代表未設定起點
+        let startMinutes = -1;
+
+        // 初始化與調整大小
+        function resizeClock() {
+            // 取得目前的顯示寬度 (由 CSS 控制：手機340, iPad 600)
+            const size = container.clientWidth;
+            
+            // 設定 Canvas 解析度 (避免模糊)
+            canvas.width = size;
+            canvas.height = size;
+            
+            // 計算縮放比例 (基準是 340px)
+            scale = size / 340;
+            
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+            radius = canvas.width / 2 - (35 * scale); // 邊距也跟著縮放
+
+            drawClock();
+        }
+
+        // 監聽視窗大小改變 (旋轉螢幕時)
+        window.addEventListener('resize', resizeClock);
 
         function drawClock() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. 畫經過時間的扇形 (如果有點選設定起點)
             if (startMinutes !== -1) {
                 drawSector();
-                updateDiffBox(); // 更新上方的綠色盒子文字
+                updateDiffBox();
             } else {
-                diffBox.style.display = 'none'; // 沒設定起點就隱藏綠色盒子
+                diffBox.style.display = 'none';
             }
 
-            // 2. 畫刻度
+            // 1. 畫刻度
             for (let i = 0; i < 60; i++) {
                 const angle = (i * 6 - 90) * (Math.PI / 180);
                 const isHour = i % 5 === 0;
-                const tickLen = isHour ? 15 : 8; 
+                // 線條長度跟著 scale 變大
+                const tickLen = (isHour ? 15 : 8) * scale; 
                 const startX = centerX + Math.cos(angle) * (radius - tickLen);
                 const startY = centerY + Math.sin(angle) * (radius - tickLen);
                 const endX = centerX + Math.cos(angle) * radius;
@@ -247,49 +301,50 @@
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(endX, endY);
                 ctx.strokeStyle = isHour ? '#2c3e50' : '#bdc3c7';
-                ctx.lineWidth = isHour ? 4 : 2;
+                ctx.lineWidth = (isHour ? 4 : 2) * scale; // 線條粗細也縮放
                 ctx.stroke();
             }
 
-            // 3. 畫數字
-            ctx.font = "bold 26px Arial";
+            // 2. 畫數字
+            ctx.font = `bold ${26 * scale}px Arial`; // 字體縮放
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillStyle = "#2c3e50";
             for (let i = 1; i <= 12; i++) {
                 const angle = (i * 30 - 90) * (Math.PI / 180);
-                const x = centerX + Math.cos(angle) * (radius - 40);
-                const y = centerY + Math.sin(angle) * (radius - 40);
+                const dist = radius - (40 * scale);
+                const x = centerX + Math.cos(angle) * dist;
+                const y = centerY + Math.sin(angle) * dist;
                 ctx.fillText(i, x, y);
             }
 
-            // 4. 畫外圈輔助數字 (5, 10, 15...)
-            ctx.font = "14px Arial";
+            // 3. 畫外圈輔助數字
+            ctx.font = `${14 * scale}px Arial`;
             ctx.fillStyle = "#e67e22";
             for (let i = 1; i <= 12; i++) {
                 const angle = (i * 30 - 90) * (Math.PI / 180);
-                const x = centerX + Math.cos(angle) * (radius + 20);
-                const y = centerY + Math.sin(angle) * (radius + 20);
+                const dist = radius + (20 * scale);
+                const x = centerX + Math.cos(angle) * dist;
+                const y = centerY + Math.sin(angle) * dist;
                 ctx.fillText(i * 5, x, y);
             }
 
-            // 指針角度計算
             const hourAngle = ((minutes / 720) * 360 - 90) * (Math.PI / 180);
             const minuteAngle = (((minutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
 
-            // 5. 畫起點的鬼影指針
+            // 4. 鬼影指針
             if (startMinutes !== -1) {
                 const startMinAngle = (((startMinutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
-                drawHand(startMinAngle, radius * 0.8, "rgba(52, 152, 219, 0.2)", 5); 
+                drawHand(startMinAngle, radius * 0.8, "rgba(52, 152, 219, 0.2)", 5 * scale); 
             }
 
-            // 6. 畫時針與分針
-            drawHand(hourAngle, radius * 0.5, "#e74c3c", 8);
-            drawHand(minuteAngle, radius * 0.8, "#3498db", 5);
+            // 5. 畫指針
+            drawHand(hourAngle, radius * 0.5, "#e74c3c", 8 * scale);
+            drawHand(minuteAngle, radius * 0.8, "#3498db", 5 * scale);
 
             // 中心點
             ctx.beginPath();
-            ctx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
+            ctx.arc(centerX, centerY, 8 * scale, 0, 2 * Math.PI);
             ctx.fillStyle = "#333";
             ctx.fill();
 
@@ -299,21 +354,10 @@
         function drawSector() {
             let startAng = (((startMinutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
             let endAng = (((minutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
-
-            // 處理跨越 12 點的繪圖問題，讓扇形總是畫「較短的那一邊」或「順時針」
-            // 為了簡單且符合直覺：我們畫「走過的痕跡」
-            // 這裡使用 Canvas 的 arc，它會自動處理
-            
-            // 判斷順時針畫還是逆時針畫比較合理
-            // 這裡簡單判定：如果順時針走
-            let counterClockwise = false;
-            // 稍微複雜的邏輯：判斷數值差異
-            let diff = minutes - startMinutes;
-            if (diff < 0) counterClockwise = true; 
+            let counterClockwise = (minutes - startMinutes) < 0;
 
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            // 這裡簡化處理：不管正負，我們只畫視覺上的扇形
             ctx.arc(centerX, centerY, radius, startAng, endAng, counterClockwise); 
             ctx.fillStyle = "rgba(241, 196, 15, 0.4)";
             ctx.fill();
@@ -333,17 +377,14 @@
             let h = Math.floor(minutes / 60);
             if (h === 0) h = 12;
             if (h > 12) h = h % 12;
-            if (h === 0) h = 12; // 處理 12 點整除問題
-            
+            if (h === 0) h = 12;
             const m = Math.floor(minutes % 60);
             digitalDisplay.innerText = `${h}:${m < 10 ? '0' + m : m}`;
         }
 
         function updateDiffBox() {
-            diffBox.style.display = 'block'; // 顯示盒子
+            diffBox.style.display = 'block';
             let diff = Math.abs(minutes - startMinutes);
-            
-            // 計算大格與小格
             let bigGrid = Math.floor(diff / 5);
             let smallGrid = diff % 5;
             
@@ -375,13 +416,10 @@
             if (newMinutes === 60) newMinutes = 0;
             
             const oldMin = minutes % 60;
-            // 順時針過 12 點
             if (oldMin > 45 && newMinutes < 15) currentHour++;
-            // 逆時針過 12 點
             if (oldMin < 15 && newMinutes > 45) currentHour--;
             
-            // 保持 currentHour 在合理範圍 (防止負數導致運算錯誤)
-            if (currentHour < 0) currentHour += 12; // 簡單循環
+            if (currentHour < 0) currentHour += 12;
             
             minutes = currentHour * 60 + newMinutes;
             drawClock();
@@ -393,7 +431,7 @@
                 startMinutes = minutes;
                 btnTrace.innerText = "❌ 取消起點";
                 btnTrace.classList.add("active-mode");
-                diffMask.style.display = "none"; // 重置遮罩
+                diffMask.style.display = "none";
             } else {
                 clearTrace();
             }
@@ -408,7 +446,6 @@
             drawClock();
         }
 
-        // 遮罩控制
         function toggleTimeMask() {
             timeMask.style.display = timeMask.style.display === "flex" ? "none" : "flex";
         }
@@ -418,9 +455,7 @@
         }
 
         function toggleAllMasks() {
-            // 簡易切換：如果有一個開著，就全關，反之全開
             const isAnyOpen = timeMask.style.display === "flex" || (diffBox.style.display === "block" && diffMask.style.display === "flex");
-            
             if (isAnyOpen) {
                 timeMask.style.display = "none";
                 diffMask.style.display = "none";
@@ -430,30 +465,16 @@
             }
         }
 
-        function jumpMinute(val) {
-            minutes += val;
-            drawClock();
-        }
+        function jumpMinute(val) { minutes += val; drawClock(); }
+        function jumpHour(val) { minutes += val * 60; drawClock(); }
         
-        function jumpHour(val) {
-            minutes += val * 60;
-            drawClock();
-        }
-        
-        // 老師出題模式
         function setTimeManually() {
             const h = parseInt(document.getElementById('input-h').value);
             const m = parseInt(document.getElementById('input-m').value);
-            
             if (h >= 1 && h <= 12 && m >= 0 && m <= 59) {
-                // 將 12 點視為 0 或 12 都可以，這裡轉成 internal minutes
-                let targetH = h;
-                if (targetH === 12) targetH = 0; 
-                // 為了不讓指針亂轉圈，我們試著保持在目前的 12 小時週期內
+                let targetH = h === 12 ? 0 : h; 
                 let currentCycle = Math.floor(minutes / 720);
                 minutes = currentCycle * 720 + targetH * 60 + m;
-                
-                // 清除軌跡以免混淆
                 clearTrace();
                 drawClock();
             } else {
@@ -461,25 +482,15 @@
             }
         }
 
-        // 事件監聽
         canvas.addEventListener('mousedown', () => isDragging = true);
         window.addEventListener('mouseup', () => isDragging = false);
         canvas.addEventListener('mousemove', (e) => { if (isDragging) handleInteraction(e); });
-
-        canvas.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            handleInteraction(e);
-            e.preventDefault();
-        }, {passive: false});
-
-        canvas.addEventListener('touchmove', (e) => {
-            if (isDragging) handleInteraction(e);
-            e.preventDefault();
-        }, {passive: false});
-        
+        canvas.addEventListener('touchstart', (e) => { isDragging = true; handleInteraction(e); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { if (isDragging) handleInteraction(e); e.preventDefault(); }, {passive: false});
         canvas.addEventListener('touchend', () => isDragging = false);
 
-        drawClock();
+        // 啟動時執行一次 Resize
+        resizeClock();
     </script>
 </body>
 </html>
