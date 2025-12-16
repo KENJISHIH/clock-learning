@@ -224,12 +224,21 @@
         <button onclick="jumpHour(1)">+1時</button>
     </div>
 
-    <!-- 出題區 -->
+    <!-- 出題區 (優化版) -->
     <div class="teacher-panel">
         <span>出題：</span>
-        <input type="number" id="input-h" min="1" max="12" value="9">
+        <!-- 加入 onclick="this.select()" 點擊自動全選 -->
+        <!-- 加入 inputmode="numeric" 強制顯示大數字鍵盤 -->
+        <input type="number" id="input-h" min="1" max="12" value="9" 
+               inputmode="numeric" pattern="[0-9]*" 
+               onclick="this.select();" onfocus="this.select();">
+        
         <span>點</span>
-        <input type="number" id="input-m" min="0" max="59" value="00">
+        
+        <input type="number" id="input-m" min="0" max="59" value="00" 
+               inputmode="numeric" pattern="[0-9]*" 
+               onclick="this.select();" onfocus="this.select();">
+        
         <span>分</span>
         <button onclick="setTimeManually()" class="btn-red">變身 ✨</button>
     </div>
