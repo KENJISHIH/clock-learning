@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小二數學：時間大師（iPad 優化版）</title>
+    <title>小二數學：時間大師（修復版）</title>
     <style>
         body {
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
@@ -38,7 +38,7 @@
             margin-bottom: 15px;
         }
 
-        /* 時鐘容器 - 預設手機大小 */
+        /* 時鐘容器 */
         #clock-container {
             position: relative;
             width: 340px;
@@ -54,7 +54,7 @@
             border: 8px solid #f39c12;
             cursor: pointer;
             touch-action: none;
-            width: 100%;  /* 跟隨容器大小 */
+            width: 100%;
             height: 100%;
         }
 
@@ -87,6 +87,7 @@
         .btn-red { background-color: #e74c3c; box-shadow: 0 4px 0 #c0392b; }
         .btn-gray { background-color: #95a5a6; box-shadow: 0 4px 0 #7f8c8d; }
         .btn-orange { background-color: #e67e22; box-shadow: 0 4px 0 #d35400; }
+        .btn-purple { background-color: #9b59b6; box-shadow: 0 4px 0 #8e44ad; }
         
         button.active-mode { 
             background-color: #27ae60; 
@@ -150,44 +151,21 @@
             text-align: center;
             border: 2px solid #bdc3c7;
             border-radius: 10px;
+            color: #2c3e50;
+            font-weight: bold;
         }
 
         .helper-text { color: #7f8c8d; font-size: 1rem; margin-top: 15px; text-align: center; }
 
-        /* --- iPad / 平板 特別優化 --- */
-        /* 當螢幕寬度大於 768px 時 (iPad 直立或橫放通常都大於這個) */
+        /* iPad / 平板 優化 */
         @media (min-width: 768px) {
             h1 { font-size: 2rem; margin-bottom: 25px; }
-            
-            /* 時鐘變大 */
-            #clock-container {
-                width: 600px;
-                height: 600px;
-            }
-            
-            /* 字體與按鈕變大 */
-            button {
-                padding: 15px 25px;
-                font-size: 1.3rem;
-                border-radius: 20px;
-            }
-            
-            #digital-box {
-                width: 300px;
-                height: 90px;
-            }
-            
+            #clock-container { width: 600px; height: 600px; }
+            button { padding: 15px 25px; font-size: 1.3rem; border-radius: 20px; }
+            #digital-box { width: 300px; height: 90px; }
             #digital-time { font-size: 4rem; }
-            
-            #diff-box {
-                font-size: 1.5rem;
-                padding: 15px 30px;
-            }
-
-            .teacher-panel {
-                transform: scale(1.1); /* 整個出題區稍微放大 */
-                margin-top: 30px;
-            }
+            #diff-box { font-size: 1.5rem; padding: 15px 30px; }
+            .teacher-panel { transform: scale(1.1); margin-top: 30px; }
         }
     </style>
 </head>
@@ -195,7 +173,6 @@
 
     <h1>🕒 時間大師</h1>
 
-    <!-- 經過時間顯示區 -->
     <div id="diff-box" onclick="toggleDiffMask()">
         <span id="diff-text">0 分鐘</span>
         <div id="diff-mask" class="mask">點我看經過多久</div>
@@ -205,40 +182,34 @@
         <canvas id="clock"></canvas>
     </div>
 
-    <!-- 答案顯示區 -->
     <div id="digital-box" onclick="toggleTimeMask()">
         <span id="digital-time">12:00</span>
         <div id="time-mask" class="mask">點我看現在幾點</div>
     </div>
 
-    <!-- 控制按鈕 -->
     <div class="controls">
         <button onclick="setStartPoint()" id="btn-trace" class="btn-orange">🚩 設定起點</button>
-        <button onclick="clearTrace()" class="btn-gray">清除</button>
+        <button onclick="toggle24Hour()" id="btn-24h" class="btn-purple">顯示 24 時制</button>
         <button onclick="toggleAllMasks()" class="btn-red">🙈 全部遮住</button>
     </div>
 
     <div class="controls">
+        <button onclick="clearTrace()" class="btn-gray">清除軌跡</button>
         <button onclick="jumpMinute(1)">+1分</button>
         <button onclick="jumpMinute(5)">+5分</button>
         <button onclick="jumpHour(1)">+1時</button>
     </div>
 
-    <!-- 出題區 (優化版) -->
+    <!-- 出題區 (自動全選 + 大數字鍵盤) -->
     <div class="teacher-panel">
         <span>出題：</span>
-        <!-- 加入 onclick="this.select()" 點擊自動全選 -->
-        <!-- 加入 inputmode="numeric" 強制顯示大數字鍵盤 -->
         <input type="number" id="input-h" min="1" max="12" value="9" 
                inputmode="numeric" pattern="[0-9]*" 
                onclick="this.select();" onfocus="this.select();">
-        
         <span>點</span>
-        
         <input type="number" id="input-m" min="0" max="59" value="00" 
                inputmode="numeric" pattern="[0-9]*" 
                onclick="this.select();" onfocus="this.select();">
-        
         <span>分</span>
         <button onclick="setTimeManually()" class="btn-red">變身 ✨</button>
     </div>
@@ -255,34 +226,35 @@
         const diffMask = document.getElementById('diff-mask');
         const timeMask = document.getElementById('time-mask');
         const btnTrace = document.getElementById('btn-trace');
+        const btn24h = document.getElementById('btn-24h');
         
         let centerX, centerY, radius;
-        let scale = 1; // 縮放比例
+        let scale = 1;
 
         let minutes = 720; 
         let isDragging = false;
         let startMinutes = -1;
+        let show24Hour = false;
 
-        // 初始化與調整大小
         function resizeClock() {
-            // 取得目前的顯示寬度 (由 CSS 控制：手機340, iPad 600)
-            const size = container.clientWidth;
+            // 安全機制：如果抓不到寬度，預設用 340 (確保不會變成 0)
+            let size = container.clientWidth || 340;
             
-            // 設定 Canvas 解析度 (避免模糊)
+            // 設定 Canvas 解析度
             canvas.width = size;
             canvas.height = size;
             
-            // 計算縮放比例 (基準是 340px)
+            // 計算縮放比例
             scale = size / 340;
             
             centerX = canvas.width / 2;
             centerY = canvas.height / 2;
-            radius = canvas.width / 2 - (35 * scale); // 邊距也跟著縮放
-
+            radius = canvas.width / 2 - (35 * scale);
+            
             drawClock();
         }
 
-        // 監聽視窗大小改變 (旋轉螢幕時)
+        // 監聽視窗大小改變
         window.addEventListener('resize', resizeClock);
 
         function drawClock() {
@@ -299,7 +271,6 @@
             for (let i = 0; i < 60; i++) {
                 const angle = (i * 6 - 90) * (Math.PI / 180);
                 const isHour = i % 5 === 0;
-                // 線條長度跟著 scale 變大
                 const tickLen = (isHour ? 15 : 8) * scale; 
                 const startX = centerX + Math.cos(angle) * (radius - tickLen);
                 const startY = centerY + Math.sin(angle) * (radius - tickLen);
@@ -310,12 +281,12 @@
                 ctx.moveTo(startX, startY);
                 ctx.lineTo(endX, endY);
                 ctx.strokeStyle = isHour ? '#2c3e50' : '#bdc3c7';
-                ctx.lineWidth = (isHour ? 4 : 2) * scale; // 線條粗細也縮放
+                ctx.lineWidth = (isHour ? 4 : 2) * scale;
                 ctx.stroke();
             }
 
-            // 2. 畫數字
-            ctx.font = `bold ${26 * scale}px Arial`; // 字體縮放
+            // 2. 畫主數字 (1-12)
+            ctx.font = `bold ${26 * scale}px Arial`;
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillStyle = "#2c3e50";
@@ -327,7 +298,21 @@
                 ctx.fillText(i, x, y);
             }
 
-            // 3. 畫外圈輔助數字
+            // 3. 畫 24 小時制數字 (13-24)
+            if (show24Hour) {
+                ctx.font = `bold ${16 * scale}px Arial`; // 稍微調小一點字體
+                ctx.fillStyle = "#d81b60"; // 粉紅色
+                for (let i = 1; i <= 12; i++) {
+                    const angle = (i * 30 - 90) * (Math.PI / 180);
+                    const dist = radius - (85 * scale); // 內圈位置
+                    const x = centerX + Math.cos(angle) * dist;
+                    const y = centerY + Math.sin(angle) * dist;
+                    let num = i + 12;
+                    ctx.fillText(num, x, y);
+                }
+            }
+
+            // 4. 畫外圈分鐘輔助
             ctx.font = `${14 * scale}px Arial`;
             ctx.fillStyle = "#e67e22";
             for (let i = 1; i <= 12; i++) {
@@ -341,13 +326,12 @@
             const hourAngle = ((minutes / 720) * 360 - 90) * (Math.PI / 180);
             const minuteAngle = (((minutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
 
-            // 4. 鬼影指針
+            // 5. 畫指針
             if (startMinutes !== -1) {
                 const startMinAngle = (((startMinutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
                 drawHand(startMinAngle, radius * 0.8, "rgba(52, 152, 219, 0.2)", 5 * scale); 
             }
 
-            // 5. 畫指針
             drawHand(hourAngle, radius * 0.5, "#e74c3c", 8 * scale);
             drawHand(minuteAngle, radius * 0.8, "#3498db", 5 * scale);
 
@@ -408,7 +392,17 @@
             diffText.innerText = text;
         }
 
-        // --- 互動邏輯 ---
+        function toggle24Hour() {
+            show24Hour = !show24Hour;
+            btn24h.innerText = show24Hour ? "隱藏 24 時制" : "顯示 24 時制";
+            if(show24Hour) {
+                btn24h.classList.add("active-mode");
+            } else {
+                btn24h.classList.remove("active-mode");
+            }
+            drawClock();
+        }
+
         function handleInteraction(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -434,7 +428,6 @@
             drawClock();
         }
 
-        // --- 按鈕功能 ---
         function setStartPoint() {
             if (startMinutes === -1) {
                 startMinutes = minutes;
@@ -498,8 +491,11 @@
         canvas.addEventListener('touchmove', (e) => { if (isDragging) handleInteraction(e); e.preventDefault(); }, {passive: false});
         canvas.addEventListener('touchend', () => isDragging = false);
 
-        // 啟動時執行一次 Resize
+        // --- 修正關鍵：初始化與延遲重繪 ---
         resizeClock();
+        
+        // 多加一個延遲，確保 iPad 排版完成後再畫一次
+        setTimeout(resizeClock, 200);
     </script>
 </body>
 </html>
