@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>小二數學：時間大師（修復版）</title>
+    <title>小二數學：時間大師（完美邏輯版）</title>
     <style>
         body {
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
@@ -80,6 +80,7 @@
             cursor: pointer;
             font-weight: bold;
             font-family: inherit;
+            transition: all 0.2s;
         }
 
         button:active { transform: translateY(4px); box-shadow: none; }
@@ -89,6 +90,9 @@
         .btn-orange { background-color: #e67e22; box-shadow: 0 4px 0 #d35400; }
         .btn-purple { background-color: #9b59b6; box-shadow: 0 4px 0 #8e44ad; }
         
+        .btn-am { background-color: #f1c40f; color: #2c3e50; box-shadow: 0 4px 0 #f39c12; }
+        .btn-pm { background-color: #2c3e50; color: #f1c40f; box-shadow: 0 4px 0 #1a252f; }
+
         button.active-mode { 
             background-color: #27ae60; 
             box-shadow: 0 4px 0 #219150; 
@@ -98,8 +102,8 @@
         /* 數位時間顯示區 */
         #digital-box {
             position: relative;
-            width: 240px;
-            height: 70px;
+            width: 340px;
+            height: 90px;
             background: #2c3e50;
             border-radius: 15px;
             display: flex;
@@ -111,10 +115,19 @@
         }
 
         #digital-time {
-            font-size: 3rem;
+            font-size: 3.5rem;
             color: #ecf0f1;
             font-family: 'Courier New', monospace;
             font-weight: bold;
+        }
+        
+        #ampm-tag {
+            position: absolute;
+            left: 25px;
+            font-size: 1.2rem;
+            color: #f1c40f;
+            font-weight: bold;
+            transition: opacity 0.3s;
         }
 
         .mask {
@@ -130,7 +143,6 @@
             display: none;
         }
         
-        /* 出題區塊 */
         .teacher-panel {
             background: #fff;
             padding: 15px 25px;
@@ -157,13 +169,13 @@
 
         .helper-text { color: #7f8c8d; font-size: 1rem; margin-top: 15px; text-align: center; }
 
-        /* iPad / 平板 優化 */
         @media (min-width: 768px) {
             h1 { font-size: 2rem; margin-bottom: 25px; }
             #clock-container { width: 600px; height: 600px; }
             button { padding: 15px 25px; font-size: 1.3rem; border-radius: 20px; }
-            #digital-box { width: 300px; height: 90px; }
-            #digital-time { font-size: 4rem; }
+            #digital-box { width: 400px; height: 110px; }
+            #digital-time { font-size: 4.5rem; }
+            #ampm-tag { font-size: 1.5rem; left: 35px; }
             #diff-box { font-size: 1.5rem; padding: 15px 30px; }
             .teacher-panel { transform: scale(1.1); margin-top: 30px; }
         }
@@ -183,27 +195,29 @@
     </div>
 
     <div id="digital-box" onclick="toggleTimeMask()">
+        <div id="ampm-tag">上午</div>
         <span id="digital-time">12:00</span>
         <div id="time-mask" class="mask">點我看現在幾點</div>
     </div>
 
     <div class="controls">
-        <button onclick="setStartPoint()" id="btn-trace" class="btn-orange">🚩 設定起點</button>
+        <!-- 移除手動切換 AM/PM 按鈕，改為點擊會跳轉 12 小時 -->
+        <button onclick="jumpHour(12)" id="btn-ampm" class="btn-am">🌤 上午</button>
         <button onclick="toggle24Hour()" id="btn-24h" class="btn-purple">顯示 24 時制</button>
         <button onclick="toggleAllMasks()" class="btn-red">🙈 全部遮住</button>
     </div>
 
     <div class="controls">
+        <button onclick="setStartPoint()" id="btn-trace" class="btn-orange">🚩 設定起點</button>
         <button onclick="clearTrace()" class="btn-gray">清除軌跡</button>
         <button onclick="jumpMinute(1)">+1分</button>
         <button onclick="jumpMinute(5)">+5分</button>
-        <button onclick="jumpHour(1)">+1時</button>
+        <button onclick="jumpHour(1)">+1時</button> 
     </div>
 
-    <!-- 出題區 (自動全選 + 大數字鍵盤) -->
     <div class="teacher-panel">
         <span>出題：</span>
-        <input type="number" id="input-h" min="1" max="12" value="9" 
+        <input type="number" id="input-h" min="0" max="23" value="9" 
                inputmode="numeric" pattern="[0-9]*" 
                onclick="this.select();" onfocus="this.select();">
         <span>點</span>
@@ -221,40 +235,37 @@
         const ctx = canvas.getContext('2d');
         const container = document.getElementById('clock-container');
         const digitalDisplay = document.getElementById('digital-time');
+        const ampmTag = document.getElementById('ampm-tag');
         const diffBox = document.getElementById('diff-box');
         const diffText = document.getElementById('diff-text');
         const diffMask = document.getElementById('diff-mask');
         const timeMask = document.getElementById('time-mask');
         const btnTrace = document.getElementById('btn-trace');
         const btn24h = document.getElementById('btn-24h');
+        const btnAmPm = document.getElementById('btn-ampm');
         
         let centerX, centerY, radius;
         let scale = 1;
 
-        let minutes = 720; 
+        // 核心改變：現在 totalMinutes 範圍是 0 ~ 1439 (24小時)
+        // 0 = 00:00, 720 = 12:00, 1439 = 23:59
+        let totalMinutes = 720; // 預設 12:00 (中午)
+        
         let isDragging = false;
         let startMinutes = -1;
         let show24Hour = false;
 
         function resizeClock() {
-            // 安全機制：如果抓不到寬度，預設用 340 (確保不會變成 0)
             let size = container.clientWidth || 340;
-            
-            // 設定 Canvas 解析度
             canvas.width = size;
             canvas.height = size;
-            
-            // 計算縮放比例
             scale = size / 340;
-            
             centerX = canvas.width / 2;
             centerY = canvas.height / 2;
             radius = canvas.width / 2 - (35 * scale);
-            
             drawClock();
         }
 
-        // 監聽視窗大小改變
         window.addEventListener('resize', resizeClock);
 
         function drawClock() {
@@ -299,15 +310,16 @@
             }
 
             // 3. 畫 24 小時制數字 (13-24)
+            // 這裡畫 24 而不是 00，是為了配合兒童鐘面的視覺習慣
             if (show24Hour) {
-                ctx.font = `bold ${16 * scale}px Arial`; // 稍微調小一點字體
-                ctx.fillStyle = "#d81b60"; // 粉紅色
+                ctx.font = `bold ${16 * scale}px Arial`;
+                ctx.fillStyle = "#d81b60"; 
                 for (let i = 1; i <= 12; i++) {
                     const angle = (i * 30 - 90) * (Math.PI / 180);
-                    const dist = radius - (85 * scale); // 內圈位置
+                    const dist = radius - (85 * scale); 
                     const x = centerX + Math.cos(angle) * dist;
                     const y = centerY + Math.sin(angle) * dist;
-                    let num = i + 12;
+                    let num = i + 12; 
                     ctx.fillText(num, x, y);
                 }
             }
@@ -323,11 +335,12 @@
                 ctx.fillText(i * 5, x, y);
             }
 
-            const hourAngle = ((minutes / 720) * 360 - 90) * (Math.PI / 180);
-            const minuteAngle = (((minutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
+            const hourAngle = ((totalMinutes / 720) * 360 - 90) * (Math.PI / 180);
+            const minuteAngle = (((totalMinutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
 
             // 5. 畫指針
             if (startMinutes !== -1) {
+                // 這裡要處理 startMinutes 的顯示邏輯
                 const startMinAngle = (((startMinutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
                 drawHand(startMinAngle, radius * 0.8, "rgba(52, 152, 219, 0.2)", 5 * scale); 
             }
@@ -345,9 +358,14 @@
         }
 
         function drawSector() {
+            // 只畫分鐘的差異
             let startAng = (((startMinutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
-            let endAng = (((minutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
-            let counterClockwise = (minutes - startMinutes) < 0;
+            let endAng = (((totalMinutes % 60) / 60) * 360 - 90) * (Math.PI / 180);
+            
+            // 判斷繪製方向 (如果現在的時間小於起點，就逆時針畫)
+            // 這裡我們用總分鐘數的差值來判斷
+            let diff = totalMinutes - startMinutes;
+            let counterClockwise = diff < 0;
 
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
@@ -367,17 +385,41 @@
         }
 
         function updateDigital() {
-            let h = Math.floor(minutes / 60);
-            if (h === 0) h = 12;
-            if (h > 12) h = h % 12;
-            if (h === 0) h = 12;
-            const m = Math.floor(minutes % 60);
-            digitalDisplay.innerText = `${h}:${m < 10 ? '0' + m : m}`;
+            let h = Math.floor(totalMinutes / 60); // 0 ~ 23
+            let m = Math.floor(totalMinutes % 60);
+            
+            // 判斷上下午
+            let isPM = h >= 12;
+            
+            // 更新 UI 狀態 (按鈕顏色)
+            if (isPM) {
+                btnAmPm.innerHTML = "🌙 下午";
+                btnAmPm.className = "btn-pm";
+                ampmTag.innerText = "下午";
+            } else {
+                btnAmPm.innerHTML = "🌤 上午";
+                btnAmPm.className = "btn-am";
+                ampmTag.innerText = "上午";
+            }
+
+            // 顯示邏輯
+            if (show24Hour) {
+                // 24小時制：直接顯示 h (00 ~ 23)
+                // 這裡修復了 24:57 的問題，現在午夜是 00:xx
+                ampmTag.style.opacity = '0';
+                digitalDisplay.innerText = `${h < 10 ? '0'+h : h}:${m < 10 ? '0' + m : m}`;
+            } else {
+                // 12小時制：0 點變 12 點，13 點變 1 點
+                ampmTag.style.opacity = '1';
+                let displayH = h % 12;
+                if (displayH === 0) displayH = 12;
+                digitalDisplay.innerText = `${displayH}:${m < 10 ? '0' + m : m}`;
+            }
         }
 
         function updateDiffBox() {
             diffBox.style.display = 'block';
-            let diff = Math.abs(minutes - startMinutes);
+            let diff = Math.abs(totalMinutes - startMinutes);
             let bigGrid = Math.floor(diff / 5);
             let smallGrid = diff % 5;
             
@@ -411,26 +453,42 @@
             const x = clientX - rect.left - centerX;
             const y = clientY - rect.top - centerY;
             
+            // 計算角度 (0-360)
             let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
             if (angle < 0) angle += 360;
 
-            let currentHour = Math.floor(minutes / 60);
-            let newMinutes = Math.round((angle / 360) * 60);
-            if (newMinutes === 60) newMinutes = 0;
+            // 目前的小時 (0-23)
+            let currentHour = Math.floor(totalMinutes / 60);
             
-            const oldMin = minutes % 60;
-            if (oldMin > 45 && newMinutes < 15) currentHour++;
-            if (oldMin < 15 && newMinutes > 45) currentHour--;
+            // 新的分鐘數 (0-59)
+            let newMinutesOnFace = Math.round((angle / 360) * 60);
+            if (newMinutesOnFace === 60) newMinutesOnFace = 0;
             
-            if (currentHour < 0) currentHour += 12;
+            // 舊的分鐘數 (0-59)
+            const oldMinutesOnFace = totalMinutes % 60;
             
-            minutes = currentHour * 60 + newMinutes;
+            // 判斷是否跨過 12 點 (鐘面上的 12)
+            // 順時針：例如 58 -> 2
+            if (oldMinutesOnFace > 45 && newMinutesOnFace < 15) {
+                currentHour++; 
+            }
+            // 逆時針：例如 2 -> 58
+            else if (oldMinutesOnFace < 15 && newMinutesOnFace > 45) {
+                currentHour--;
+            }
+            
+            // 這裡是最重要的修正：處理 0~23 的循環
+            if (currentHour >= 24) currentHour = 0; // 23:59 -> 00:00
+            if (currentHour < 0) currentHour = 23;  // 00:00 -> 23:59
+
+            // 更新總分鐘數
+            totalMinutes = currentHour * 60 + newMinutesOnFace;
             drawClock();
         }
 
         function setStartPoint() {
             if (startMinutes === -1) {
-                startMinutes = minutes;
+                startMinutes = totalMinutes;
                 btnTrace.innerText = "❌ 取消起點";
                 btnTrace.classList.add("active-mode");
                 diffMask.style.display = "none";
@@ -467,20 +525,31 @@
             }
         }
 
-        function jumpMinute(val) { minutes += val; drawClock(); }
-        function jumpHour(val) { minutes += val * 60; drawClock(); }
+        function jumpMinute(val) { 
+            totalMinutes += val; 
+            // 處理跨日
+            if (totalMinutes >= 1440) totalMinutes -= 1440;
+            if (totalMinutes < 0) totalMinutes += 1440;
+            drawClock(); 
+        }
+        
+        function jumpHour(val) { 
+            totalMinutes += val * 60; 
+            if (totalMinutes >= 1440) totalMinutes -= 1440;
+            if (totalMinutes < 0) totalMinutes += 1440;
+            drawClock(); 
+        }
         
         function setTimeManually() {
             const h = parseInt(document.getElementById('input-h').value);
             const m = parseInt(document.getElementById('input-m').value);
-            if (h >= 1 && h <= 12 && m >= 0 && m <= 59) {
-                let targetH = h === 12 ? 0 : h; 
-                let currentCycle = Math.floor(minutes / 720);
-                minutes = currentCycle * 720 + targetH * 60 + m;
+            
+            if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+                totalMinutes = h * 60 + m;
                 clearTrace();
                 drawClock();
             } else {
-                alert("請輸入正確的時間喔！(1-12點, 0-59分)");
+                alert("請輸入正確的時間喔！(0-23點, 0-59分)");
             }
         }
 
@@ -491,10 +560,7 @@
         canvas.addEventListener('touchmove', (e) => { if (isDragging) handleInteraction(e); e.preventDefault(); }, {passive: false});
         canvas.addEventListener('touchend', () => isDragging = false);
 
-        // --- 修正關鍵：初始化與延遲重繪 ---
         resizeClock();
-        
-        // 多加一個延遲，確保 iPad 排版完成後再畫一次
         setTimeout(resizeClock, 200);
     </script>
 </body>
